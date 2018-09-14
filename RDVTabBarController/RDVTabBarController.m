@@ -57,11 +57,6 @@
     
     [self setTabBarHidden:self.isTabBarHidden animated:NO];
 }
--(void)viewDidLayoutSubviews{
-    [super viewDidLayoutSubviews];
-    [self setTabBarHidden:self.isTabBarHidden animated:NO];
-
-}
 
 - (UIStatusBarStyle)preferredStatusBarStyle {
     return self.selectedViewController.preferredStatusBarStyle;
@@ -71,7 +66,7 @@
     return self.selectedViewController.preferredStatusBarUpdateAnimation;
 }
 
-- (NSUInteger)supportedInterfaceOrientations {
+- (UIInterfaceOrientationMask)supportedInterfaceOrientations {
     UIInterfaceOrientationMask orientationMask = UIInterfaceOrientationMaskAll;
     for (UIViewController *viewController in [self viewControllers]) {
         if (![viewController respondsToSelector:@selector(supportedInterfaceOrientations)]) {
@@ -190,22 +185,38 @@
     return _contentView;
 }
 
+- (void)viewDidLayoutSubviews {
+    [super viewDidLayoutSubviews];
+    if (@available(iOS 11, *)) {
+        UIEdgeInsets safeAreaInsets = [[[[UIApplication sharedApplication] windows] firstObject] safeAreaInsets];
+        if (safeAreaInsets.bottom > 0) {
+            [self setTabBarHidden:NO];
+        }
+    }
+}
+
 - (void)setTabBarHidden:(BOOL)hidden animated:(BOOL)animated {
     _tabBarHidden = hidden;
     
     __weak RDVTabBarController *weakSelf = self;
-    
-    void (^block)() = ^{
+
+    void (^block)(void) = ^{
         CGSize viewSize = weakSelf.view.bounds.size;
         CGFloat tabBarStartingY = viewSize.height;
         CGFloat contentViewHeight = viewSize.height;
         CGFloat tabBarHeight = CGRectGetHeight([[weakSelf tabBar] frame]);
-        
-        if (!tabBarHeight) {
-            tabBarHeight = 49;
+        UIEdgeInsets safeAreaInsets = UIEdgeInsetsZero;
+        if (@available(iOS 11, *)) {
+            safeAreaInsets = [[[[UIApplication sharedApplication] windows] firstObject] safeAreaInsets];
         }
-        
-        if (!weakSelf.tabBarHidden) {
+
+        if (!tabBarHeight) {
+            tabBarHeight = 49 + safeAreaInsets.bottom;
+        }
+
+        weakSelf.tabBar.contentEdgeInsets = UIEdgeInsetsMake(0, 0, safeAreaInsets.bottom, 0);
+
+        if (!hidden) {
             tabBarStartingY = viewSize.height - tabBarHeight;
             if (![[weakSelf tabBar] isTranslucent]) {
                 contentViewHeight -= ([[weakSelf tabBar] minimumContentHeight] ?: tabBarHeight);
@@ -218,7 +229,7 @@
     };
     
     void (^completion)(BOOL) = ^(BOOL finished){
-        if (weakSelf.tabBarHidden) {
+        if (hidden) {
             [[weakSelf tabBar] setHidden:YES];
         }
     };
