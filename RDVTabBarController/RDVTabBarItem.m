@@ -295,10 +295,6 @@
 
 #pragma mark - Accessibility
 
-- (NSString *)accessibilityLabel{
-    return @"tabbarItem";
-}
-
 - (BOOL)isAccessibilityElement
 {
     return YES;
