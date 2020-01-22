@@ -105,7 +105,7 @@
     
     _items = [items copy];
     for (RDVTabBarItem *item in _items) {
-        [item addTarget:self action:@selector(tabBarItemWasSelected:) forControlEvents:UIControlEventTouchDown];
+        [item addTarget:self action:@selector(tabBarItemWasSelected:) forControlEvents:UIControlEventTouchUpInside];
         [self addSubview:item];
     }
 }
@@ -180,7 +180,7 @@
 }
 
 - (id)accessibilityElementAtIndex:(NSInteger)index{
-    return self.items[index];
+    return [self.items objectAtIndex:index];
 }
 
 - (NSInteger)indexOfAccessibilityElement:(id)element{
